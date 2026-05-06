@@ -1,0 +1,170 @@
+{
+  "name": "ollama-code-completions",
+  "displayName": "Ollama Code Completions",
+  "description": "Inline ghost-text autocomplete powered by a self-hosted Ollama instance.",
+  "version": "0.1.0",
+  "publisher": "your-publisher-id",
+  "license": "MIT",
+  "icon": "icon.png",
+  "categories": [
+    "Programming Languages",
+    "Machine Learning"
+  ],
+  "keywords": [
+    "ollama",
+    "ai",
+    "autocomplete",
+    "completion",
+    "fim"
+  ],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/ollama-code-completions-vscode"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onLanguage:javascriptreact",
+    "onLanguage:typescriptreact",
+    "onLanguage:python",
+    "onLanguage:csharp",
+    "onLanguage:go",
+    "onLanguage:rust",
+    "onLanguage:java",
+    "onLanguage:cpp",
+    "onLanguage:c",
+    "onLanguage:php",
+    "onLanguage:ruby",
+    "onLanguage:swift",
+    "onLanguage:kotlin",
+    "onLanguage:scala",
+    "onLanguage:dart",
+    "onLanguage:lua",
+    "onLanguage:html",
+    "onLanguage:css",
+    "onLanguage:scss",
+    "onLanguage:json",
+    "onLanguage:jsonc",
+    "onLanguage:yaml",
+    "onLanguage:markdown",
+    "onLanguage:sql",
+    "onLanguage:shellscript",
+    "onLanguage:powershell",
+    "onLanguage:vue",
+    "onLanguage:svelte"
+  ],
+  "contributes": {
+    "configuration": {
+      "title": "Ollama Code Completions",
+      "properties": {
+        "ollamaCodeCompletions.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Base URL of the Ollama server."
+        },
+        "ollamaCodeCompletions.model": {
+          "type": "string",
+          "default": "qwen2.5-coder:1.5b",
+          "description": "Model to use for completions. Use the 'Pick Model' command to choose from installed models."
+        },
+        "ollamaCodeCompletions.useAuthentication": {
+          "type": "boolean",
+          "default": false,
+          "description": "Send HTTP Basic auth on each request. Credentials are managed via the 'Set Credentials' command (stored in the OS keychain)."
+        },
+        "ollamaCodeCompletions.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable inline completions."
+        },
+        "ollamaCodeCompletions.debounceMs": {
+          "type": "number",
+          "default": 300,
+          "minimum": 0,
+          "description": "Idle time after typing before requesting a completion (milliseconds)."
+        },
+        "ollamaCodeCompletions.maxPrefixChars": {
+          "type": "number",
+          "default": 4096,
+          "minimum": 1,
+          "description": "Maximum number of characters of prefix sent to the model."
+        },
+        "ollamaCodeCompletions.maxSuffixChars": {
+          "type": "number",
+          "default": 1024,
+          "minimum": 0,
+          "description": "Maximum number of characters of suffix sent to the model."
+        },
+        "ollamaCodeCompletions.maxPredict": {
+          "type": "number",
+          "default": 128,
+          "minimum": 1,
+          "description": "Maximum number of tokens for the model to generate (num_predict)."
+        },
+        "ollamaCodeCompletions.timeoutSeconds": {
+          "type": "number",
+          "default": 30,
+          "minimum": 1,
+          "description": "HTTP request timeout in seconds."
+        },
+        "ollamaCodeCompletions.logToFile": {
+          "type": "boolean",
+          "default": false,
+          "description": "Write diagnostic log entries to a file in the OS temp directory."
+        },
+        "ollamaCodeCompletions.logToOutputChannel": {
+          "type": "boolean",
+          "default": false,
+          "description": "Write diagnostic log entries to the 'Ollama Code Completions' output channel."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "ollamaCodeCompletions.setCredentials",
+        "title": "Set Credentials",
+        "category": "Ollama Code Completions"
+      },
+      {
+        "command": "ollamaCodeCompletions.clearCredentials",
+        "title": "Clear Credentials",
+        "category": "Ollama Code Completions"
+      },
+      {
+        "command": "ollamaCodeCompletions.pickModel",
+        "title": "Pick Model",
+        "category": "Ollama Code Completions"
+      },
+      {
+        "command": "ollamaCodeCompletions.testConnection",
+        "title": "Test Connection",
+        "category": "Ollama Code Completions"
+      },
+      {
+        "command": "ollamaCodeCompletions.showLog",
+        "title": "Show Log",
+        "category": "Ollama Code Completions"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "typecheck": "tsc -p ./ --noEmit",
+    "test": "tsc -p ./ && mocha \"out/test/**/*.test.js\"",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.24.0",
+    "mocha": "^10.3.0",
+    "typescript": "^5.3.0"
+  }
+}
