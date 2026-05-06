@@ -1,4 +1,10 @@
-# Ollama Code Completions
+# Ollama Code Completions for Visual Studio Code
+
+[![VS Marketplace Version](https://vsmarketplacebadges.dev/version-short/profanterdev.ollama-code-completions.png?label=VS%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=profanterdev.ollama-code-completions) [![Installs](https://vsmarketplacebadges.dev/installs-short/profanterdev.ollama-code-completions.png?label=installs&color=brightgreen)](https://marketplace.visualstudio.com/items?itemName=profanterdev.ollama-code-completions) [![Rating](https://vsmarketplacebadges.dev/rating-short/profanterdev.ollama-code-completions.png?label=rating)](https://marketplace.visualstudio.com/items?itemName=profanterdev.ollama-code-completions) [![Build](https://img.shields.io/github/actions/workflow/status/profanter-dev/ollama-code-completions-vsc/build.yml?label=build)](https://github.com/profanter-dev/ollama-code-completions-vsc/actions) [![License](https://img.shields.io/badge/license-MIT-lightgrey)](https://github.com/profanter-dev/ollama-code-completions-vsc/blob/main/LICENSE)
+
+**Also available for** [Visual Studio](https://marketplace.visualstudio.com/items?itemName=profanterdev.OllamaCodeCompletions)
+
+---
 
 Inline ghost-text autocomplete for VS Code, powered by a self-hosted [Ollama](https://ollama.com) instance.
 
@@ -32,21 +38,21 @@ Sends the code around your cursor to an Ollama FIM-capable model (e.g. `qwen2.5-
 
 ## Settings
 
-| Setting | Default | Description |
-| --- | --- | --- |
-| `ollamaCodeCompletions.serverUrl` | `http://localhost:11434` | Base URL of the Ollama server. |
-| `ollamaCodeCompletions.model` | `qwen2.5-coder:1.5b` | Model name. |
-| `ollamaCodeCompletions.useAuthentication` | `false` | Send HTTP Basic auth on each request. |
-| `ollamaCodeCompletions.enabled` | `true` | Master toggle for inline completions. |
-| `ollamaCodeCompletions.debounceMs` | `300` | Idle time after typing before a request is sent. |
-| `ollamaCodeCompletions.maxPrefixChars` | `4096` | Maximum prefix length sent to the model. |
-| `ollamaCodeCompletions.maxSuffixChars` | `1024` | Maximum suffix length sent to the model. |
-| `ollamaCodeCompletions.maxPredict` | `128` | Maximum tokens for the model to generate. |
-| `ollamaCodeCompletions.timeoutSeconds` | `30` | HTTP request timeout. |
-| `ollamaCodeCompletions.logToFile` | `false` | Write logs to `OllamaCodeCompletions.log` in the OS temp directory. |
-| `ollamaCodeCompletions.logToOutputChannel` | `false` | Write logs to the "Ollama Code Completions" output channel. |
-| `ollamaCodeCompletions.showStatusBarItem` | `true` | Show the status bar indicator. |
-| `ollamaCodeCompletions.midLineMode` | `"smart"` | `"smart"` allows mid-line completions inside JSX attributes and before closing punctuation. `"never"` restores the old behavior of skipping whenever there is any text after the cursor. |
+| Setting                                    | Default                  | Description                                                                                                                                                                              |
+| ------------------------------------------ | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ollamaCodeCompletions.serverUrl`          | `http://localhost:11434` | Base URL of the Ollama server.                                                                                                                                                           |
+| `ollamaCodeCompletions.model`              | `qwen2.5-coder:1.5b`     | Model name.                                                                                                                                                                              |
+| `ollamaCodeCompletions.useAuthentication`  | `false`                  | Send HTTP Basic auth on each request.                                                                                                                                                    |
+| `ollamaCodeCompletions.enabled`            | `true`                   | Master toggle for inline completions.                                                                                                                                                    |
+| `ollamaCodeCompletions.debounceMs`         | `300`                    | Idle time after typing before a request is sent.                                                                                                                                         |
+| `ollamaCodeCompletions.maxPrefixChars`     | `4096`                   | Maximum prefix length sent to the model.                                                                                                                                                 |
+| `ollamaCodeCompletions.maxSuffixChars`     | `1024`                   | Maximum suffix length sent to the model.                                                                                                                                                 |
+| `ollamaCodeCompletions.maxPredict`         | `128`                    | Maximum tokens for the model to generate.                                                                                                                                                |
+| `ollamaCodeCompletions.timeoutSeconds`     | `30`                     | HTTP request timeout.                                                                                                                                                                    |
+| `ollamaCodeCompletions.logToFile`          | `false`                  | Write logs to `OllamaCodeCompletions.log` in the OS temp directory.                                                                                                                      |
+| `ollamaCodeCompletions.logToOutputChannel` | `false`                  | Write logs to the "Ollama Code Completions" output channel.                                                                                                                              |
+| `ollamaCodeCompletions.showStatusBarItem`  | `true`                   | Show the status bar indicator.                                                                                                                                                           |
+| `ollamaCodeCompletions.midLineMode`        | `"smart"`                | `"smart"` allows mid-line completions inside JSX attributes and before closing punctuation. `"never"` restores the old behavior of skipping whenever there is any text after the cursor. |
 
 Username and password are **not** in settings - they go in the OS keychain, set via the **Set Credentials** command.
 
@@ -70,7 +76,7 @@ The extension activates on these languages; you can add more by raising an issue
 
 ### React / JSX completions
 
-With the default `midLineMode: "smart"`, completions trigger inside JSX tag attributes — e.g. placing the cursor inside `<Button onClick={|}>`  or `<Card>{|}</Card>` will request a suggestion. The extension detects these positions heuristically; if you prefer the strict legacy behaviour, set `midLineMode` to `"never"`.
+With the default `midLineMode: "smart"`, completions trigger inside JSX tag attributes — e.g. placing the cursor inside `<Button onClick={|}>` or `<Card>{|}</Card>` will request a suggestion. The extension detects these positions heuristically; if you prefer the strict legacy behaviour, set `midLineMode` to `"never"`.
 
 ### JSON translation files
 
@@ -121,4 +127,4 @@ The scaffold ships with placeholders that need to be filled in:
 
 ## License
 
-MIT - see [LICENSE](LICENSE).
+[MIT](LICENSE)
