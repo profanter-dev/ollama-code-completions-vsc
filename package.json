@@ -2,7 +2,7 @@
 	"name": "ollama-code-completions",
 	"displayName": "Ollama Code Completions",
 	"description": "Inline ghost-text autocomplete powered by a self-hosted Ollama instance.",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"publisher": "profanterdev",
 	"license": "MIT",
 	"icon": "icon.png",
