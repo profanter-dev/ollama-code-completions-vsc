@@ -7,7 +7,9 @@ import { OllamaError } from '../ollama/types';
 import { StatusBar } from '../statusBar';
 import { CompletionCache } from './cache';
 import { debounceWithCancel } from './debouncer';
-import { postProcess } from './postprocess';
+import { findSuffixOverlapLength, postProcess } from './postprocess';
+import { CLOSING_ONLY_RE, isInsideJsxTag } from './midLine';
+import { isInsideJsonStringValue } from './contextDetect';
 
 export class InlineProvider implements vscode.InlineCompletionItemProvider {
     constructor(
@@ -29,15 +31,35 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
             return undefined;
         }
 
-        // Skip mid-line cursor positions: if there is non-whitespace text after
-        // the cursor on the same line, we do not request a completion. This
-        // avoids inserting text that collides with content the user has
-        // already typed further along the line.
         const lineText = document.lineAt(position.line).text;
         const afterCursor = lineText.slice(position.character);
-        if (afterCursor.trim().length > 0) {
-            log.log('Skip', `mid-line: chars-after=${afterCursor.length}`);
-            return undefined;
+        const trimmedAfter = afterCursor.trim();
+
+        // JSON/JSONC string bypass: inside a quoted string value the mid-line
+        // gating rules do not apply — string content is inherently mid-line and
+        // the closing punctuation heuristics are irrelevant.
+        const jsonStringBypass = isInsideJsonStringValue(document, position);
+
+        // Mid-line gating: decide whether to proceed when there is content
+        // after the cursor on the same line.
+        let midLine = false;
+        if (!jsonStringBypass && trimmedAfter.length > 0) {
+            if (this.config.midLineMode === 'never') {
+                log.log('Skip', 'midline-never');
+                return undefined;
+            }
+            // smart mode: allow completions when afterCursor looks safe to
+            // replace or is clearly inside a JSX tag attribute.
+            if (CLOSING_ONLY_RE.test(trimmedAfter)) {
+                midLine = true;
+                log.log('Provide', 'midline-punctuation');
+            } else if (trimmedAfter.length <= 80 && isInsideJsxTag(lineText.slice(0, position.character))) {
+                midLine = true;
+                log.log('Provide', 'midline-jsx');
+            } else {
+                log.log('Skip', `midline-substantive chars-after=${trimmedAfter.length}`);
+                return undefined;
+            }
         }
 
         const prefix = capPrefix(getPrefix(document, position), this.config.maxPrefixChars);
@@ -47,7 +69,7 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
         const cached = this.cache.lookup(prefix, suffix);
         if (cached !== undefined) {
             log.log('Cache', `hit prefixLen=${prefix.length} suffixLen=${suffix.length} resultLen=${cached.length}`);
-            return [new vscode.InlineCompletionItem(cached, new vscode.Range(position, position))];
+            return [makeItem(cached, position, midLine ? afterCursor : '')];
         }
         log.log('Cache', `miss prefixLen=${prefix.length} suffixLen=${suffix.length}`);
 
@@ -79,8 +101,10 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
             return undefined;
         }
 
-        // 4. Post-process.
-        const cleaned = postProcess({ raw: result.text, prefix, suffix });
+        // 4. Post-process. For mid-line completions, skip suffix-overlap removal
+        // from the pipeline — we encode any overlap into the replacement range
+        // instead of stripping it from the text.
+        const cleaned = postProcess({ raw: result.text, prefix, suffix, skipSuffixOverlap: midLine });
         if (cleaned === null) {
             log.log('PostProcess', `rejected rawLen=${result.text.length}`);
             this.statusBar?.setIdle();
@@ -92,8 +116,23 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
         this.cache.set(prefix, suffix, cleaned);
         log.log('Provide', `len=${cleaned.length} elapsedMs=${result.elapsedMs}`);
         this.statusBar?.setIdle();
-        return [new vscode.InlineCompletionItem(cleaned, new vscode.Range(position, position))];
+        return [makeItem(cleaned, position, midLine ? afterCursor : '')];
     }
+}
+
+// Build an InlineCompletionItem whose replacement range absorbs any suffix
+// of afterCursor that the completion already ends with. When afterCursor is
+// empty (end-of-line) the range collapses to a point.
+function makeItem(
+    text: string,
+    position: vscode.Position,
+    afterCursor: string
+): vscode.InlineCompletionItem {
+    const overlapLen = afterCursor ? findSuffixOverlapLength(text, afterCursor) : 0;
+    const endPos = overlapLen > 0
+        ? new vscode.Position(position.line, position.character + overlapLen)
+        : position;
+    return new vscode.InlineCompletionItem(text, new vscode.Range(position, endPos));
 }
 
 function getPrefix(document: vscode.TextDocument, position: vscode.Position): string {

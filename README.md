@@ -10,7 +10,8 @@ Sends the code around your cursor to an Ollama FIM-capable model (e.g. `qwen2.5-
 - Fill-in-the-middle prompting using Ollama's native `suffix` parameter
 - LRU completion cache with prefix-extension matching (instant suggestions when you backspace or keep typing)
 - Post-processing: suffix overlap removal, bracket balancing, prefix-echo trimming
-- Mid-line cursor detection - no requests when there is text after the caret
+- Smart mid-line completions — allows completions inside JSX tag attributes and before closing punctuation; configurable via `midLineMode`
+- JSON/JSONC string completions — completes inside string values in `.json` and `.jsonc` files, useful for translation files
 - HTTP Basic auth support, with credentials stored in the OS keychain (Keychain / Credential Manager / libsecret)
 - Diagnostic logging to an output channel and/or file, gated by settings
 - "Pick Model", "Test Connection", "Show Log", "Set Credentials", "Clear Credentials" commands
@@ -44,6 +45,8 @@ Sends the code around your cursor to an Ollama FIM-capable model (e.g. `qwen2.5-
 | `ollamaCodeCompletions.timeoutSeconds` | `30` | HTTP request timeout. |
 | `ollamaCodeCompletions.logToFile` | `false` | Write logs to `OllamaCodeCompletions.log` in the OS temp directory. |
 | `ollamaCodeCompletions.logToOutputChannel` | `false` | Write logs to the "Ollama Code Completions" output channel. |
+| `ollamaCodeCompletions.showStatusBarItem` | `true` | Show the status bar indicator. |
+| `ollamaCodeCompletions.midLineMode` | `"smart"` | `"smart"` allows mid-line completions inside JSX attributes and before closing punctuation. `"never"` restores the old behavior of skipping whenever there is any text after the cursor. |
 
 Username and password are **not** in settings - they go in the OS keychain, set via the **Set Credentials** command.
 
@@ -62,6 +65,26 @@ All commands are available through the command palette under the **Ollama Code C
 JavaScript / TypeScript (incl. JSX/TSX), Python, C#, Go, Rust, Java, C/C++, PHP, Ruby, Swift, Kotlin, Scala, Dart, Lua, HTML, CSS/SCSS, JSON, YAML, Markdown, SQL, shell, PowerShell, Vue, Svelte.
 
 The extension activates on these languages; you can add more by raising an issue.
+
+## Tips
+
+### React / JSX completions
+
+With the default `midLineMode: "smart"`, completions trigger inside JSX tag attributes — e.g. placing the cursor inside `<Button onClick={|}>`  or `<Card>{|}</Card>` will request a suggestion. The extension detects these positions heuristically; if you prefer the strict legacy behaviour, set `midLineMode` to `"never"`.
+
+### JSON translation files
+
+The extension completes inside string values in `.json` and `.jsonc` files. This is especially useful for translation / i18n files: with sibling keys already filled in, a good FIM-capable model can pattern-match and suggest the right phrase for an empty value.
+
+```json
+{
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "|"   ← cursor here triggers a completion
+}
+```
+
+Completion quality for human-language text depends heavily on the model. Small coder models (e.g. `qwen2.5-coder:1.5b`) pattern-match well from nearby keys but are not real translators — treat their suggestions as a starting point, not a finished translation. Larger general-purpose models produce better prose but are slower.
 
 ## Privacy
 

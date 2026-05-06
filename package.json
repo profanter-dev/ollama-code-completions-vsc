@@ -2,7 +2,7 @@
 	"name": "ollama-code-completions",
 	"displayName": "Ollama Code Completions",
 	"description": "Inline ghost-text autocomplete powered by a self-hosted Ollama instance.",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"publisher": "profanterdev",
 	"license": "MIT",
 	"icon": "icon.png",
@@ -125,6 +125,16 @@
 					"type": "boolean",
 					"default": true,
 					"description": "Show the Ollama Code Completions status bar item."
+				},
+				"ollamaCodeCompletions.midLineMode": {
+					"type": "string",
+					"enum": ["smart", "never"],
+					"enumDescriptions": [
+						"Allow completions mid-line when the after-cursor content looks like it can be safely replaced or kept (recommended).",
+						"Never request completions when there is non-whitespace text after the cursor (legacy behavior)."
+					],
+					"default": "smart",
+					"markdownDescription": "How to handle completions when the cursor has text after it on the same line."
 				}
 			}
 		},

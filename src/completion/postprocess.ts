@@ -19,10 +19,11 @@ export interface PostProcessInput {
     raw: string;
     prefix: string;
     suffix: string;
+    skipSuffixOverlap?: boolean;
 }
 
 export function postProcess(input: PostProcessInput): string | null {
-    return runPipeline(input.raw, input.prefix, input.suffix);
+    return runPipeline(input.raw, input.prefix, input.suffix, input.skipSuffixOverlap);
 }
 
 // Exposed for unit tests so each stage is individually checkable.
@@ -49,13 +50,15 @@ export const stages = {
     trimPrefixEcho,
 };
 
-function runPipeline(raw: string, prefix: string, suffix: string): string | null {
+function runPipeline(raw: string, prefix: string, suffix: string, skipSuffixOverlap?: boolean): string | null {
     let text: string | null = stages.nullOrWhitespace(raw);
-    if (text === null) return null;
+    if (text === null) { return null; }
 
     text = stages.stripLeadingNewlines(text);
     text = stages.singleLineIfMidExpression(text, prefix);
-    text = trimSuffixOverlap(text, suffix);
+    if (!skipSuffixOverlap) {
+        text = trimSuffixOverlap(text, suffix);
+    }
     text = balanceBrackets(text);
     text = trimPrefixEcho(text, prefix);
 
@@ -74,16 +77,20 @@ function isMidExpression(line: string): boolean {
     return /[(\[{,=+\-*/<>!&|^?:]\s*$/.test(line);
 }
 
-export function trimSuffixOverlap(text: string, suffix: string): string {
-    if (!suffix || !text) return text;
-    // Find the largest k such that text.slice(-k) === suffix.slice(0, k).
+export function findSuffixOverlapLength(text: string, suffix: string): number {
+    if (!suffix || !text) { return 0; }
     const max = Math.min(text.length, suffix.length);
     for (let k = max; k > 0; k--) {
         if (text.endsWith(suffix.slice(0, k))) {
-            return text.slice(0, text.length - k);
+            return k;
         }
     }
-    return text;
+    return 0;
+}
+
+export function trimSuffixOverlap(text: string, suffix: string): string {
+    const k = findSuffixOverlapLength(text, suffix);
+    return k > 0 ? text.slice(0, text.length - k) : text;
 }
 
 export function trimPrefixEcho(text: string, prefix: string): string {

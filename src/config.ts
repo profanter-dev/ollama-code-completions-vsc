@@ -15,6 +15,7 @@ export interface ConfigSnapshot {
     logToFile: boolean;
     logToOutputChannel: boolean;
     showStatusBarItem: boolean;
+    midLineMode: 'smart' | 'never';
 }
 
 export interface ConfigChangeEvent {
@@ -70,6 +71,7 @@ export class Config implements vscode.Disposable {
     get logToFile(): boolean { return this.snapshot.logToFile; }
     get logToOutputChannel(): boolean { return this.snapshot.logToOutputChannel; }
     get showStatusBarItem(): boolean { return this.snapshot.showStatusBarItem; }
+    get midLineMode(): 'smart' | 'never' { return this.snapshot.midLineMode; }
 
     async setModel(model: string): Promise<void> {
         const cfg = vscode.workspace.getConfiguration(SECTION);
@@ -91,6 +93,7 @@ export class Config implements vscode.Disposable {
             logToFile: cfg.get<boolean>('logToFile', false),
             logToOutputChannel: cfg.get<boolean>('logToOutputChannel', false),
             showStatusBarItem: cfg.get<boolean>('showStatusBarItem', true),
+            midLineMode: cfg.get<string>('midLineMode', 'smart') === 'never' ? 'never' : 'smart',
         };
     }
 
