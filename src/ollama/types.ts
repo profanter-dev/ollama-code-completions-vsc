@@ -39,3 +39,10 @@ export interface CompletionResult {
     text: string;
     elapsedMs: number;
 }
+
+export class OllamaError extends Error {
+    constructor(message: string, readonly httpStatus: number) {
+        super(message);
+        this.name = 'OllamaError';
+    }
+}

@@ -2,7 +2,7 @@
 	"name": "ollama-code-completions",
 	"displayName": "Ollama Code Completions",
 	"description": "Inline ghost-text autocomplete powered by a self-hosted Ollama instance.",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"publisher": "profanterdev",
 	"license": "MIT",
 	"icon": "icon.png",
@@ -120,6 +120,11 @@
 					"type": "boolean",
 					"default": false,
 					"markdownDescription": "Write diagnostic log entries to the 'Ollama Code Completions' output channel.\n\n[Show log](command:ollamaCodeCompletions.showLog)"
+				},
+				"ollamaCodeCompletions.showStatusBarItem": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show the Ollama Code Completions status bar item."
 				}
 			}
 		},
@@ -147,6 +152,11 @@
 			{
 				"command": "ollamaCodeCompletions.showLog",
 				"title": "Show Log",
+				"category": "Ollama Code Completions"
+			},
+			{
+				"command": "ollamaCodeCompletions.statusBarClicked",
+				"title": "Status Bar Actions",
 				"category": "Ollama Code Completions"
 			}
 		]

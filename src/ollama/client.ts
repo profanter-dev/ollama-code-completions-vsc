@@ -7,6 +7,7 @@ import {
     CompletionResult,
     GenerateRequest,
     GenerateResponse,
+    OllamaError,
     TagsResponse,
 } from './types';
 
@@ -52,7 +53,7 @@ export class OllamaClient {
                 return null;
             }
             log.error('generate failed', err);
-            return null;
+            throw err;
         }
     }
 
@@ -119,7 +120,10 @@ export class OllamaClient {
 
             if (!res.ok) {
                 const text = await safeReadText(res);
-                throw new Error(`HTTP ${res.status} ${res.statusText}: ${truncate(text, 200)}`);
+                throw new OllamaError(
+                    `HTTP ${res.status} ${res.statusText}: ${truncate(text, 200)}`,
+                    res.status
+                );
             }
 
             return (await res.json()) as T;

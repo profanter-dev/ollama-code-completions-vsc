@@ -14,12 +14,16 @@ export interface ConfigSnapshot {
     timeoutSeconds: number;
     logToFile: boolean;
     logToOutputChannel: boolean;
+    showStatusBarItem: boolean;
 }
 
 export interface ConfigChangeEvent {
     previous: ConfigSnapshot;
     current: ConfigSnapshot;
     modelChanged: boolean;
+    enabledChanged: boolean;
+    authChanged: boolean;
+    showStatusBarItemChanged: boolean;
 }
 
 export class Config implements vscode.Disposable {
@@ -42,6 +46,9 @@ export class Config implements vscode.Disposable {
                     previous,
                     current: this.snapshot,
                     modelChanged: previous.model !== this.snapshot.model,
+                    enabledChanged: previous.enabled !== this.snapshot.enabled,
+                    authChanged: previous.useAuthentication !== this.snapshot.useAuthentication,
+                    showStatusBarItemChanged: previous.showStatusBarItem !== this.snapshot.showStatusBarItem,
                 });
             })
         );
@@ -62,6 +69,7 @@ export class Config implements vscode.Disposable {
     get timeoutSeconds(): number { return this.snapshot.timeoutSeconds; }
     get logToFile(): boolean { return this.snapshot.logToFile; }
     get logToOutputChannel(): boolean { return this.snapshot.logToOutputChannel; }
+    get showStatusBarItem(): boolean { return this.snapshot.showStatusBarItem; }
 
     async setModel(model: string): Promise<void> {
         const cfg = vscode.workspace.getConfiguration(SECTION);
@@ -82,6 +90,7 @@ export class Config implements vscode.Disposable {
             timeoutSeconds: cfg.get<number>('timeoutSeconds', 30),
             logToFile: cfg.get<boolean>('logToFile', false),
             logToOutputChannel: cfg.get<boolean>('logToOutputChannel', false),
+            showStatusBarItem: cfg.get<boolean>('showStatusBarItem', true),
         };
     }
 

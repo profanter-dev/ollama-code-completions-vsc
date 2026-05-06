@@ -3,6 +3,8 @@ import * as path from 'path';
 import { Config } from '../config';
 import { Logger } from '../logger';
 import { OllamaClient } from '../ollama/client';
+import { OllamaError } from '../ollama/types';
+import { StatusBar } from '../statusBar';
 import { CompletionCache } from './cache';
 import { debounceWithCancel } from './debouncer';
 import { postProcess } from './postprocess';
@@ -11,7 +13,8 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
     constructor(
         private readonly config: Config,
         private readonly client: OllamaClient,
-        private readonly cache: CompletionCache
+        private readonly cache: CompletionCache,
+        private readonly statusBar?: StatusBar
     ) {}
 
     async provideInlineCompletionItems(
@@ -58,7 +61,20 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
 
         // 3. Request.
         const filename = filenameFor(document);
-        const result = await this.client.complete({ prefix, suffix, filename }, token);
+        this.statusBar?.setThinking();
+
+        let result;
+        try {
+            result = await this.client.complete({ prefix, suffix, filename }, token);
+        } catch (err) {
+            if (!token.isCancellationRequested) {
+                const message = err instanceof Error ? err.message : String(err);
+                const status = err instanceof OllamaError ? err.httpStatus : undefined;
+                this.statusBar?.setError(message, status);
+            }
+            return undefined;
+        }
+
         if (!result || token.isCancellationRequested) {
             return undefined;
         }
@@ -67,6 +83,7 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
         const cleaned = postProcess({ raw: result.text, prefix, suffix });
         if (cleaned === null) {
             log.log('PostProcess', `rejected rawLen=${result.text.length}`);
+            this.statusBar?.setIdle();
             return undefined;
         }
         log.log('PostProcess', `ok rawLen=${result.text.length} cleanedLen=${cleaned.length}`);
@@ -74,6 +91,7 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
         // 5. Cache & return.
         this.cache.set(prefix, suffix, cleaned);
         log.log('Provide', `len=${cleaned.length} elapsedMs=${result.elapsedMs}`);
+        this.statusBar?.setIdle();
         return [new vscode.InlineCompletionItem(cleaned, new vscode.Range(position, position))];
     }
 }
