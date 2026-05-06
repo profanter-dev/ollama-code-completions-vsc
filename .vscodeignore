@@ -11,3 +11,4 @@ out/test/**
 .editorconfig
 node_modules/.cache/**
 *.vsix
+*.svg
