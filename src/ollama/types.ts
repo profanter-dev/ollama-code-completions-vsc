@@ -33,6 +33,7 @@ export interface CompletionRequest {
     prefix: string;
     suffix: string;
     filename?: string;
+    multiline?: boolean;
 }
 
 export interface CompletionResult {

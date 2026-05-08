@@ -10,6 +10,7 @@ import { debounceWithCancel } from './debouncer';
 import { findSuffixOverlapLength, postProcess } from './postprocess';
 import { CLOSING_ONLY_RE, isInsideJsxTag } from './midLine';
 import { isInsideJsonStringValue } from './contextDetect';
+import { decideMultiline } from './multilineDecider';
 
 export class InlineProvider implements vscode.InlineCompletionItemProvider {
     constructor(
@@ -32,6 +33,7 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
         }
 
         const lineText = document.lineAt(position.line).text;
+        const lineBeforeCursor = lineText.slice(0, position.character);
         const afterCursor = lineText.slice(position.character);
         const trimmedAfter = afterCursor.trim();
 
@@ -65,6 +67,16 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
         const prefix = capPrefix(getPrefix(document, position), this.config.maxPrefixChars);
         const suffix = capSuffix(getSuffix(document, position), this.config.maxSuffixChars);
 
+        const multilineDecision = decideMultiline({
+            mode: this.config.multilineMode,
+            languageId: document.languageId,
+            prefix,
+            lineBeforeCursor,
+            afterCursor,
+        });
+        const maxLines = multilineDecision === 'single' ? 1 : this.config.maxCompletionLines;
+        log.log('Provide', `mode=${multilineDecision}`);
+
         // 1. Cache lookup (synchronous) before any async work.
         const cached = this.cache.lookup(prefix, suffix);
         if (cached !== undefined) {
@@ -87,7 +99,10 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
 
         let result;
         try {
-            result = await this.client.complete({ prefix, suffix, filename }, token);
+            result = await this.client.complete(
+                { prefix, suffix, filename, multiline: multilineDecision === 'multi' },
+                token
+            );
         } catch (err) {
             if (!token.isCancellationRequested) {
                 const message = err instanceof Error ? err.message : String(err);
@@ -104,7 +119,7 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
         // 4. Post-process. For mid-line completions, skip suffix-overlap removal
         // from the pipeline — we encode any overlap into the replacement range
         // instead of stripping it from the text.
-        const cleaned = postProcess({ raw: result.text, prefix, suffix, skipSuffixOverlap: midLine });
+        const cleaned = postProcess({ raw: result.text, prefix, suffix, skipSuffixOverlap: midLine, maxLines });
         if (cleaned === null) {
             log.log('PostProcess', `rejected rawLen=${result.text.length}`);
             this.statusBar?.setIdle();

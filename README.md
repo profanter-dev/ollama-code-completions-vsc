@@ -53,6 +53,8 @@ Sends the code around your cursor to an Ollama FIM-capable model (e.g. `qwen2.5-
 | `ollamaCodeCompletions.logToOutputChannel` | `false`                  | Write logs to the "Ollama Code Completions" output channel.                                                                                                                              |
 | `ollamaCodeCompletions.showStatusBarItem`  | `true`                   | Show the status bar indicator.                                                                                                                                                           |
 | `ollamaCodeCompletions.midLineMode`        | `"smart"`                | `"smart"` allows mid-line completions inside JSX attributes and before closing punctuation. `"never"` restores the old behavior of skipping whenever there is any text after the cursor. |
+| `ollamaCodeCompletions.multilineMode`      | `"auto"`                 | `"auto"` allows multi-line completions only when context suggests they're appropriate (e.g. after `{` or `=>`). `"always"` allows multi-line everywhere. `"never"` limits all completions to a single line. |
+| `ollamaCodeCompletions.maxCompletionLines` | `6`                      | Hard cap on the number of lines in any completion. Completions longer than this are truncated even in `always` mode.                                                                     |
 
 Username and password are **not** in settings - they go in the OS keychain, set via the **Set Credentials** command.
 
@@ -77,6 +79,10 @@ The extension activates on these languages; you can add more by raising an issue
 ### React / JSX completions
 
 With the default `midLineMode: "smart"`, completions trigger inside JSX tag attributes — e.g. placing the cursor inside `<Button onClick={|}>` or `<Card>{|}</Card>` will request a suggestion. The extension detects these positions heuristically; if you prefer the strict legacy behaviour, set `midLineMode` to `"never"`.
+
+### Multi-line completion control
+
+By default the extension uses `"auto"` multi-line mode: it allows multi-line completions only when context suggests they're useful (e.g. just after `{` or `=>`), and limits them to a single line in comments, strings, and JSX attribute values. If the model still occasionally produces too much, lower `maxCompletionLines` (default 6). If you want full multi-line everywhere, set `multilineMode` to `"always"`.
 
 ### JSON translation files
 

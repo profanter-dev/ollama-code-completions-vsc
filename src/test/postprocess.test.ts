@@ -5,6 +5,7 @@ import {
     trimSuffixOverlap,
     trimPrefixEcho,
     balanceBrackets,
+    capLines,
 } from '../completion/postprocess';
 
 describe('postProcess pipeline', () => {
@@ -142,5 +143,55 @@ describe('post-process helpers', () => {
     it('stages.singleLineIfMidExpression leaves complete statements alone', () => {
         const out = stages.singleLineIfMidExpression('a\nb', 'x = 1;');
         assert.strictEqual(out, 'a\nb');
+    });
+});
+
+describe('capLines', () => {
+    it('truncates to maxLines lines', () => {
+        const input = 'line1\nline2\nline3\nline4\nline5';
+        assert.strictEqual(capLines(input, 3), 'line1\nline2\nline3');
+    });
+
+    it('is a no-op when text has fewer lines than the cap', () => {
+        const input = 'line1\nline2\nline3';
+        assert.strictEqual(capLines(input, 10), input);
+    });
+
+    it('preserves embedded blank lines within the cap', () => {
+        const input = 'line1\n\nline3\nline4\nline5';
+        assert.strictEqual(capLines(input, 3), 'line1\n\nline3');
+    });
+
+    it('strips trailing whitespace on the last kept line when truncating', () => {
+        const input = 'line1   \nline2\nline3';
+        assert.strictEqual(capLines(input, 1), 'line1');
+    });
+
+    it('does not strip trailing whitespace when no truncation occurs', () => {
+        const input = 'line1   \nline2';
+        assert.strictEqual(capLines(input, 5), input);
+    });
+});
+
+describe('postProcess with maxLines', () => {
+    it('maxLines=1 returns at most one line even when raw contains many', () => {
+        const out = postProcess({
+            raw: 'line1\nline2\nline3',
+            prefix: 'function foo() {\n    ',
+            suffix: '',
+            maxLines: 1,
+        });
+        assert.strictEqual(out, 'line1');
+    });
+
+    it('maxLines=3 keeps 3 lines of a 5-line completion', () => {
+        const out = postProcess({
+            raw: 'a\nb\nc\nd\ne',
+            prefix: 'function foo() {\n    ',
+            suffix: '',
+            maxLines: 3,
+        });
+        assert.ok(out !== null);
+        assert.strictEqual(out!.split('\n').length, 3);
     });
 });

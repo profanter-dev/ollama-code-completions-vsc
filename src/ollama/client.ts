@@ -26,6 +26,11 @@ export class OllamaClient {
             prompt = `// File: ${req.filename}\n${prompt}`;
         }
 
+        const stop: string[] = ['\n\n\n'];
+        if (req.multiline === false) {
+            stop.push('\n');
+        }
+
         const body: GenerateRequest = {
             model: this.config.model,
             prompt,
@@ -34,6 +39,7 @@ export class OllamaClient {
             options: {
                 num_predict: this.config.maxPredict,
                 temperature: 0.2,
+                stop,
             },
         };
 

@@ -20,10 +20,11 @@ export interface PostProcessInput {
     prefix: string;
     suffix: string;
     skipSuffixOverlap?: boolean;
+    maxLines?: number;
 }
 
 export function postProcess(input: PostProcessInput): string | null {
-    return runPipeline(input.raw, input.prefix, input.suffix, input.skipSuffixOverlap);
+    return runPipeline(input.raw, input.prefix, input.suffix, input.skipSuffixOverlap, input.maxLines);
 }
 
 // Exposed for unit tests so each stage is individually checkable.
@@ -48,9 +49,16 @@ export const stages = {
     trimSuffixOverlap,
     balanceBrackets,
     trimPrefixEcho,
+    capLines,
 };
 
-function runPipeline(raw: string, prefix: string, suffix: string, skipSuffixOverlap?: boolean): string | null {
+function runPipeline(
+    raw: string,
+    prefix: string,
+    suffix: string,
+    skipSuffixOverlap?: boolean,
+    maxLines?: number
+): string | null {
     let text: string | null = stages.nullOrWhitespace(raw);
     if (text === null) { return null; }
 
@@ -61,6 +69,9 @@ function runPipeline(raw: string, prefix: string, suffix: string, skipSuffixOver
     }
     text = balanceBrackets(text);
     text = trimPrefixEcho(text, prefix);
+    if (maxLines !== undefined) {
+        text = capLines(text, maxLines);
+    }
 
     return stages.nullOrWhitespace(text);
 }
@@ -117,6 +128,14 @@ type ScanState =
     | 'stringSingle'
     | 'stringDouble'
     | 'stringBacktick';
+
+export function capLines(text: string, maxLines: number): string {
+    const lines = text.split('\n');
+    if (lines.length <= maxLines) { return text; }
+    const kept = lines.slice(0, maxLines);
+    kept[kept.length - 1] = kept[kept.length - 1].replace(/\s+$/, '');
+    return kept.join('\n');
+}
 
 export function balanceBrackets(text: string): string {
     let depth = 0;
