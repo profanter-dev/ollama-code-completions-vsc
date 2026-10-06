@@ -4,16 +4,9 @@ import { Logger } from './logger';
 import { Credentials } from './auth/credentials';
 import { OllamaClient } from './ollama/client';
 import { CompletionCache } from './completion/cache';
+import { AiIgnore } from './completion/aiIgnore';
 import { InlineProvider } from './completion/provider';
 import { StatusBar } from './statusBar';
-
-const SUPPORTED_LANGUAGES = [
-    'javascript', 'typescript', 'javascriptreact', 'typescriptreact',
-    'python', 'csharp', 'go', 'rust', 'java', 'cpp', 'c',
-    'php', 'ruby', 'swift', 'kotlin', 'scala', 'dart', 'lua',
-    'html', 'css', 'scss', 'json', 'jsonc', 'yaml', 'markdown',
-    'sql', 'shellscript', 'powershell', 'vue', 'svelte',
-];
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     const config = new Config();
@@ -22,22 +15,24 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const client = new OllamaClient(config, credentials);
     const cache = new CompletionCache(100);
     const statusBar = new StatusBar(config);
-    const provider = new InlineProvider(config, client, cache, statusBar);
+    const aiIgnore = new AiIgnore();
+    const provider = new InlineProvider(config, client, cache, aiIgnore, statusBar);
 
     logger.log('Attach', 'Ollama Code Completions activated');
 
     // Set status bar to correct initial state.
     await applyInitialState(config, credentials, statusBar);
 
-    // Selectors for both file:// documents and unsaved buffers.
-    const selector: vscode.DocumentSelector = SUPPORTED_LANGUAGES.flatMap((language) => [
-        { language, scheme: 'file' },
-        { language, scheme: 'untitled' },
-    ]);
+    const selector: vscode.DocumentSelector = [
+        { scheme: 'file' },
+        { scheme: 'untitled' },
+        { scheme: 'vscode-scm' }
+    ];
 
     context.subscriptions.push(
         config,
         logger,
+        aiIgnore,
         statusBar,
         vscode.languages.registerInlineCompletionItemProvider(selector, provider),
         config.onDidChange(async (e) => {

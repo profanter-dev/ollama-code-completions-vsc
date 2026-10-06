@@ -18,6 +18,7 @@ export interface ConfigSnapshot {
     midLineMode: 'smart' | 'never';
     multilineMode: 'auto' | 'always' | 'never';
     maxCompletionLines: number;
+    disabledLanguages: Set<string>;
 }
 
 export interface ConfigChangeEvent {
@@ -76,6 +77,7 @@ export class Config implements vscode.Disposable {
     get midLineMode(): 'smart' | 'never' { return this.snapshot.midLineMode; }
     get multilineMode(): 'auto' | 'always' | 'never' { return this.snapshot.multilineMode; }
     get maxCompletionLines(): number { return this.snapshot.maxCompletionLines; }
+    get disabledLanguages(): Set<string> { return this.snapshot.disabledLanguages; }
 
     async setModel(model: string): Promise<void> {
         const cfg = vscode.workspace.getConfiguration(SECTION);
@@ -100,6 +102,7 @@ export class Config implements vscode.Disposable {
             midLineMode: cfg.get<string>('midLineMode', 'smart') === 'never' ? 'never' : 'smart',
             multilineMode: normalizeMultilineMode(cfg.get<string>('multilineMode', 'auto')),
             maxCompletionLines: Math.max(1, cfg.get<number>('maxCompletionLines', 6)),
+            disabledLanguages: normalizeDisabledLanguages(cfg.get<string[]>('disabledLanguages', [])),
         };
     }
 
@@ -116,4 +119,16 @@ function trimTrailingSlash(url: string): string {
 function normalizeMultilineMode(value: string): 'auto' | 'always' | 'never' {
     if (value === 'always' || value === 'never') { return value; }
     return 'auto';
+}
+
+function normalizeDisabledLanguages(disabledLanguages: string[]): Set<string> {
+    return disabledLanguages.reduce((acc, lang) => {
+        lang = lang.trim().toLowerCase();
+
+        if (lang) {
+            acc.add(lang);
+        }
+
+        return acc;
+    }, new Set<string>());
 }

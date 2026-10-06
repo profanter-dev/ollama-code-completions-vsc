@@ -1,11 +1,14 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+
 import { Config } from '../config';
 import { Logger } from '../logger';
 import { OllamaClient } from '../ollama/client';
 import { OllamaError } from '../ollama/types';
 import { StatusBar } from '../statusBar';
+
 import { CompletionCache } from './cache';
+import { AiIgnore } from './aiIgnore';
 import { debounceWithCancel } from './debouncer';
 import { findSuffixOverlapLength, postProcess } from './postprocess';
 import { CLOSING_ONLY_RE, isInsideJsxTag } from './midLine';
@@ -17,6 +20,7 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
         private readonly config: Config,
         private readonly client: OllamaClient,
         private readonly cache: CompletionCache,
+        private readonly aiIgnore: AiIgnore,
         private readonly statusBar?: StatusBar
     ) {}
 
@@ -29,6 +33,21 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
         const log = Logger.get();
 
         if (!this.config.enabled) {
+            return undefined;
+        }
+
+        if (this.config.disabledLanguages.has(document.languageId)) {
+            log.log('Skip', `language-disabled: ${document.languageId}`);
+            return undefined;
+        }
+
+        try {
+            if (await this.aiIgnore.excludes(document)) {
+                log.log('Skip', 'aiignore');
+                return undefined;
+            }
+        } catch (error) {
+            log.log('Skip', `aiignore-read-error: ${error instanceof Error ? error.message : String(error)}`);
             return undefined;
         }
 

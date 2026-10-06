@@ -18,6 +18,7 @@ Sends the code around your cursor to an Ollama FIM-capable model (e.g. `qwen2.5-
 - Post-processing: suffix overlap removal, bracket balancing, prefix-echo trimming
 - Smart mid-line completions — allows completions inside JSX tag attributes and before closing punctuation; configurable via `midLineMode`
 - JSON/JSONC string completions — completes inside string values in `.json` and `.jsonc` files, useful for translation files
+- Workspace-root `.aiignore` rules suppress inline completions for matching files before cache lookup or model requests
 - HTTP Basic auth support, with credentials stored in the OS keychain (Keychain / Credential Manager / libsecret)
 - Diagnostic logging to an output channel and/or file, gated by settings
 - "Pick Model", "Test Connection", "Show Log", "Set Credentials", "Clear Credentials" commands
@@ -55,8 +56,23 @@ Sends the code around your cursor to an Ollama FIM-capable model (e.g. `qwen2.5-
 | `ollamaCodeCompletions.midLineMode`        | `"smart"`                | `"smart"` allows mid-line completions inside JSX attributes and before closing punctuation. `"never"` restores the old behavior of skipping whenever there is any text after the cursor. |
 | `ollamaCodeCompletions.multilineMode`      | `"auto"`                 | `"auto"` allows multi-line completions only when context suggests they're appropriate (e.g. after `{` or `=>`). `"always"` allows multi-line everywhere. `"never"` limits all completions to a single line. |
 | `ollamaCodeCompletions.maxCompletionLines` | `6`                      | Hard cap on the number of lines in any completion. Completions longer than this are truncated even in `always` mode.                                                                     |
+| `ollamaCodeCompletions.disabledLanguages`  | `[]`                     | [Language identifiers](https://code.visualstudio.com/docs/languages/identifiers#_known-language-identifiers) for which completions are disabled. |
 
 Username and password are **not** in settings - they go in the OS keychain, set via the **Set Credentials** command.
+
+### Ignoring files
+
+Workspace files named `.env` or `.env.*` (including in subdirectories) are excluded by default, even when no `.aiignore` exists. Add `.aiignore` at the root of each VS Code workspace folder to disable completions for other matching files. Patterns use gitignore syntax (comments, `*` globs, directory rules, and `!` negations), relative to that folder. Rules in `.aiignore` take precedence over the defaults, so `!.env` re-enables completions in files named `.env`:
+
+```gitignore
+# Don't send generated files or private configs to Ollama
+dist/
+*.secret
+/config/private.json
+!config/example.secret
+```
+
+Rules apply to files in that workspace folder, including its subdirectories; nested `.aiignore` files and `.gitignore` are not read. Changes to the root `.aiignore` take effect without reloading the extension. Untitled and files outside the workspace are unaffected. If an existing `.aiignore` cannot be read, completions in that folder are skipped rather than potentially sending an excluded file.
 
 ## Commands
 
@@ -70,9 +86,7 @@ All commands are available through the command palette under the **Ollama Code C
 
 ## Supported languages
 
-JavaScript / TypeScript (incl. JSX/TSX), Python, C#, Go, Rust, Java, C/C++, PHP, Ruby, Swift, Kotlin, Scala, Dart, Lua, HTML, CSS/SCSS, JSON, YAML, Markdown, SQL, shell, PowerShell, Vue, Svelte.
-
-The extension activates on these languages; you can add more by raising an issue.
+All programming languages are supported. To disable completions for a specific language, add its language identifier to the `ollamaCodeCompletions.disabledLanguages` array setting.
 
 ## Tips
 
