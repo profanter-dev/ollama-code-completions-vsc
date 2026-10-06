@@ -71,6 +71,22 @@
 					"default": "qwen2.5-coder:1.5b",
 					"markdownDescription": "Model to use for completions. Use the 'Pick Model' command to choose from installed models.\n\n[Pick model from server](command:ollamaCodeCompletions.pickModel)"
 				},
+				"ollamaCodeCompletions.promptMode": {
+					"type": "string",
+					"enum": ["auto", "template", "raw"],
+					"enumDescriptions": [
+						"Automatically choose the best format for your model (recommended).",
+						"Use the model's built-in prompt format.",
+						"Use your custom fimTemplate prompt format."
+					],
+					"default": "auto",
+					"markdownDescription": "Choose how prompts are formatted for code completions."
+				},
+				"ollamaCodeCompletions.fimTemplate": {
+					"type": "string",
+					"default": "<|fim_prefix|>{prefix}<|fim_suffix|>{suffix}<|fim_middle|>",
+					"markdownDescription": "Prompt format for raw mode. Use `{prefix}` and `{suffix}` as insertion points; ignored in template mode."
+				},
 				"ollamaCodeCompletions.useAuthentication": {
 					"type": "boolean",
 					"default": false,

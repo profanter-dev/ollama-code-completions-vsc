@@ -21,6 +21,7 @@ export class CompletionCache {
     private readonly map = new Map<string, Node>();
     private head: Node | null = null;
     private tail: Node | null = null;
+    private _generation = 0;
 
     constructor(private readonly capacity: number = 100, private readonly extensionLookbackEntries: number = 20) {
         if (capacity < 1) {
@@ -30,6 +31,9 @@ export class CompletionCache {
 
     get size(): number {
         return this.map.size;
+    }
+    get generation(): number {
+        return this._generation;
     }
 
     /**
@@ -86,6 +90,7 @@ export class CompletionCache {
     }
 
     clear(): void {
+        this._generation++;
         this.map.clear();
         this.head = null;
         this.tail = null;

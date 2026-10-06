@@ -41,9 +41,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         statusBar,
         vscode.languages.registerInlineCompletionItemProvider(selector, provider),
         config.onDidChange(async (e) => {
-            if (e.modelChanged) {
+            if (e.modelChanged || e.previous.promptMode !== e.current.promptMode ||
+                e.previous.fimTemplate !== e.current.fimTemplate ||
+                e.previous.serverUrl !== e.current.serverUrl || e.authChanged) {
                 cache.clear();
-                logger.log('Cache', `cleared (model changed to ${e.current.model})`);
+                logger.log('Cache', 'cleared (completion settings changed)');
+            }
+            if (e.modelChanged || e.previous.serverUrl !== e.current.serverUrl ||
+                e.authChanged) {
+                client.clearCapabilities();
             }
             if (e.enabledChanged || e.authChanged) {
                 await applyInitialState(config, credentials, statusBar);
@@ -53,6 +59,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             }
         }),
         context.secrets.onDidChange(async () => {
+            if (config.useAuthentication) {
+                cache.clear();
+                client.clearCapabilities();
+            }
             await refreshAuthState(config, credentials, statusBar);
         }),
         vscode.commands.registerCommand('ollamaCodeCompletions.setCredentials', () =>

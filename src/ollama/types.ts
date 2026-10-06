@@ -6,6 +6,8 @@ export interface GenerateRequest {
     prompt: string;
     suffix?: string;
     stream: false;
+    think?: boolean;
+    raw?: boolean;
     options?: {
         num_predict?: number;
         temperature?: number;
@@ -19,6 +21,10 @@ export interface GenerateResponse {
     response: string;
     done: boolean;
     // Other diagnostic fields are present but unused.
+}
+
+export interface ShowResponse {
+    capabilities?: string[];
 }
 
 export interface TagsResponse {
@@ -42,7 +48,7 @@ export interface CompletionResult {
 }
 
 export class OllamaError extends Error {
-    constructor(message: string, readonly httpStatus: number) {
+    constructor(message: string, readonly httpStatus: number, readonly responseBody?: string) {
         super(message);
         this.name = 'OllamaError';
     }

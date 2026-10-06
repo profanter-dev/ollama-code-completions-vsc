@@ -13,6 +13,7 @@ import { isInsideJsonStringValue } from './contextDetect';
 import { decideMultiline } from './multilineDecider';
 
 export class InlineProvider implements vscode.InlineCompletionItemProvider {
+    private latestRequest = 0;
     constructor(
         private readonly config: Config,
         private readonly client: OllamaClient,
@@ -77,6 +78,7 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
         const maxLines = multilineDecision === 'single' ? 1 : this.config.maxCompletionLines;
         log.log('Provide', `mode=${multilineDecision}`);
 
+        const cacheGeneration = this.cache.generation;
         // 1. Cache lookup (synchronous) before any async work.
         const cached = this.cache.lookup(prefix, suffix);
         if (cached !== undefined) {
@@ -89,11 +91,12 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
         if (!(await debounceWithCancel(this.config.debounceMs, token))) {
             return undefined;
         }
-        if (token.isCancellationRequested) {
+        if (token.isCancellationRequested || cacheGeneration !== this.cache.generation) {
             return undefined;
         }
 
-        // 3. Request.
+        // 3. Request. Only the latest request may update the shared status bar.
+        const requestId = ++this.latestRequest;
         const filename = filenameFor(document);
         this.statusBar?.setThinking();
 
@@ -104,15 +107,19 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
                 token
             );
         } catch (err) {
-            if (!token.isCancellationRequested) {
+            if (!token.isCancellationRequested && cacheGeneration === this.cache.generation &&
+                requestId === this.latestRequest && this.statusBar?.currentState === 'thinking') {
                 const message = err instanceof Error ? err.message : String(err);
                 const status = err instanceof OllamaError ? err.httpStatus : undefined;
-                this.statusBar?.setError(message, status);
+                this.statusBar.setError(message, status);
+            } else {
+                this.setIdleIfCurrent(requestId);
             }
             return undefined;
         }
 
-        if (!result || token.isCancellationRequested) {
+        if (!result || token.isCancellationRequested || cacheGeneration !== this.cache.generation) {
+            this.setIdleIfCurrent(requestId);
             return undefined;
         }
 
@@ -122,7 +129,7 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
         const cleaned = postProcess({ raw: result.text, prefix, suffix, skipSuffixOverlap: midLine, maxLines });
         if (cleaned === null) {
             log.log('PostProcess', `rejected rawLen=${result.text.length}`);
-            this.statusBar?.setIdle();
+            this.setIdleIfCurrent(requestId);
             return undefined;
         }
         log.log('PostProcess', `ok rawLen=${result.text.length} cleanedLen=${cleaned.length}`);
@@ -130,8 +137,14 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
         // 5. Cache & return.
         this.cache.set(prefix, suffix, cleaned);
         log.log('Provide', `len=${cleaned.length} elapsedMs=${result.elapsedMs}`);
-        this.statusBar?.setIdle();
+        this.setIdleIfCurrent(requestId);
         return [makeItem(cleaned, position, midLine ? afterCursor : '')];
+    }
+
+    private setIdleIfCurrent(requestId: number): void {
+        if (requestId === this.latestRequest && this.statusBar?.currentState === 'thinking') {
+            this.statusBar.setIdle();
+        }
     }
 }
 

@@ -5,6 +5,8 @@ const SECTION = 'ollamaCodeCompletions';
 export interface ConfigSnapshot {
     serverUrl: string;
     model: string;
+    promptMode: 'auto' | 'template' | 'raw';
+    fimTemplate: string;
     useAuthentication: boolean;
     enabled: boolean;
     debounceMs: number;
@@ -64,6 +66,8 @@ export class Config implements vscode.Disposable {
     get serverUrl(): string { return this.snapshot.serverUrl; }
     get model(): string { return this.snapshot.model; }
     get useAuthentication(): boolean { return this.snapshot.useAuthentication; }
+    get promptMode(): 'auto' | 'template' | 'raw' { return this.snapshot.promptMode; }
+    get fimTemplate(): string { return this.snapshot.fimTemplate; }
     get enabled(): boolean { return this.snapshot.enabled; }
     get debounceMs(): number { return this.snapshot.debounceMs; }
     get maxPrefixChars(): number { return this.snapshot.maxPrefixChars; }
@@ -87,6 +91,8 @@ export class Config implements vscode.Disposable {
         return {
             serverUrl: trimTrailingSlash(cfg.get<string>('serverUrl', 'http://localhost:11434')),
             model: cfg.get<string>('model', 'qwen2.5-coder:1.5b'),
+            promptMode: normalizePromptMode(cfg.get<string>('promptMode', 'auto')),
+            fimTemplate: cfg.get<string>('fimTemplate', '<|fim_prefix|>{prefix}<|fim_suffix|>{suffix}<|fim_middle|>'),
             useAuthentication: cfg.get<boolean>('useAuthentication', false),
             enabled: cfg.get<boolean>('enabled', true),
             debounceMs: cfg.get<number>('debounceMs', 300),
@@ -114,6 +120,21 @@ function trimTrailingSlash(url: string): string {
 }
 
 function normalizeMultilineMode(value: string): 'auto' | 'always' | 'never' {
-    if (value === 'always' || value === 'never') { return value; }
-    return 'auto';
+    switch (value) {
+        case 'always':
+        case 'never':
+            return value;
+        default:
+            return 'auto';
+    }
+}
+
+function normalizePromptMode(value: string): 'auto' | 'template' | 'raw' {
+    switch (value) {
+        case 'template':
+        case 'raw':
+            return value;
+        default:
+            return 'auto';
+    }
 }
