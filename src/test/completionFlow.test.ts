@@ -4,6 +4,7 @@ import type * as vscode from 'vscode';
 import type { Config } from '../config';
 import type { InlineProvider as ProviderType } from '../completion/provider';
 import type { CompletionCache as CacheType } from '../completion/cache';
+import type { AiIgnore } from '../completion/aiIgnore';
 import type { Logger as LoggerType } from '../logger';
 import type { OllamaClient as ClientType } from '../ollama/client';
 import type { StatusBar } from '../statusBar';
@@ -41,6 +42,8 @@ try {
 } finally {
     loader._load = originalLoad;
 }
+
+const noAiIgnore = { excludes: async () => false } as unknown as AiIgnore;
 
 const token = {
     isCancellationRequested: false,
@@ -276,7 +279,7 @@ describe('completion requests across prompt changes', () => {
 
     it('discards a completion started before the cache was cleared', async () => {
         const config = {
-            enabled: true, midLineMode: 'smart', multilineMode: 'never', maxCompletionLines: 6,
+            enabled: true, disabledLanguages: new Set<string>(), midLineMode: 'smart', multilineMode: 'never', maxCompletionLines: 6,
             maxPrefixChars: 4096, maxSuffixChars: 1024, debounceMs: 0,
         } as Config;
         const text = 'const answer = ';
@@ -306,7 +309,7 @@ describe('completion requests across prompt changes', () => {
                 return { text: 'fresh', elapsedMs: 1 };
             },
         } as unknown as InstanceType<typeof OllamaClient>;
-        const provider = new InlineProvider(config, client, cache, status as unknown as StatusBar);
+        const provider = new InlineProvider(config, client, cache, noAiIgnore, status as unknown as StatusBar);
 
         const pending = provider.provideInlineCompletionItems(document, position, {} as vscode.InlineCompletionContext, token);
         await invoked;
@@ -322,7 +325,7 @@ describe('completion requests across prompt changes', () => {
 
     it('does not let a stale failure replace a newer request status', async () => {
         const config = {
-            enabled: true, midLineMode: 'smart', multilineMode: 'never', maxCompletionLines: 6,
+            enabled: true, disabledLanguages: new Set<string>(), midLineMode: 'smart', multilineMode: 'never', maxCompletionLines: 6,
             maxPrefixChars: 4096, maxSuffixChars: 1024, debounceMs: 0,
         } as Config;
         const text = 'const answer = ';
@@ -357,7 +360,7 @@ describe('completion requests across prompt changes', () => {
                 return new Promise<CompletionResult>((resolve) => { finishSecond = resolve; });
             },
         } as unknown as InstanceType<typeof OllamaClient>;
-        const provider = new InlineProvider(config, client, cache, status as unknown as StatusBar);
+        const provider = new InlineProvider(config, client, cache, noAiIgnore, status as unknown as StatusBar);
 
         const first = provider.provideInlineCompletionItems(document, position, {} as vscode.InlineCompletionContext, token);
         await firstInvoked;
